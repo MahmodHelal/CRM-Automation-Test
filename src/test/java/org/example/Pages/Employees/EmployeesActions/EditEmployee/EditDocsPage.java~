@@ -1,0 +1,88 @@
+package org.example.Pages.Employees.EmployeesActions.EditEmployee;
+
+import org.example.Pages.Employees.EmployementParent.EmployeeParent;
+import org.example.StepsDef.Hooks;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+
+import java.io.File;
+
+public class EditDocsPage extends EmployeeParent {
+
+        public void setGender(String gender) {
+//            dismissAlert();
+            WebElement labelButton = SHORT_WAIT.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//label[contains(text(),'" + gender + "')]")));
+            WebElement inputField = Hooks.driver.findElement(By.xpath("//input[@type='radio' and @value='" + gender + "']"));
+            boolean isSelected = inputField.isSelected();
+
+            if (!isSelected) {
+                WAIT.until(ExpectedConditions.elementToBeClickable(labelButton));
+                labelButton.click();
+                System.out.println("Gender set to: " + gender);
+            } else {
+                System.out.println("Gender already selected: " + gender);
+            }
+        }
+        public void uploadMilitaryServiceStatusPdf(String militaryFileName) {
+            uploadFileIfEmpty(By.id("military_service_certificate"), pdfPath + File.separator + militaryFileName);
+        }
+
+        public void uploadCriminalRecordPdf(String criminalFileName) {
+            uploadFileIfEmpty(By.id("criminal_record_certificate"), pdfPath + File.separator + criminalFileName);
+        }
+
+        public void uploadBankStatementPdf(String bankStatementFileName) {
+            uploadFileIfEmpty(By.id("bank_account_confirmation"), pdfPath + File.separator + bankStatementFileName);
+        }
+
+        public void uploadFormSixInsurancePdf(String formSixInsuranceFileName) {
+            uploadFileIfEmpty(By.id("social_insurance_form_6"), pdfPath + File.separator + formSixInsuranceFileName);
+        }
+
+        public void uploadForm111InsurancePdf(String form111InsuranceFileName) {
+            uploadFileIfEmpty(By.id("social_insurance_form_111"), pdfPath + File.separator + form111InsuranceFileName);
+        }
+
+        public void uploadInsurancePrintPdf(String insurancePrintFileName) {
+            uploadFileIfEmpty(By.id("social_insurance_history_printout"), pdfPath + File.separator + insurancePrintFileName);
+        }
+
+        public void uploadEmploymentOfficeCertificatePdf(String employmentOfficeCertificateFileName) {
+            uploadFileIfEmpty(By.id("employment_office_certificate"), pdfPath + File.separator + employmentOfficeCertificateFileName);
+        }
+    public void addOptionalDocument(String docName, String docFileName,int index){
+        Hooks.driver.findElement(By.xpath("//span[contains(text(), 'Add Optional Document')]")).click();
+        Hooks.driver.findElement(By.id("optional_document_name_" + index)).sendKeys(docName);
+        Hooks.driver.findElement(By.id("optional_document_file_" + index)).sendKeys(pdfPath + File.separator + docFileName);
+    }
+        /*public void addOptionalDocument(String docName, String docFileName, int index) {
+            Hooks.driver.findElement(By.xpath("//span[contains(text(), 'Add Optional Document')]")).click();
+            setInputIfEmpty(By.id("optional_document_name_" + index), docName);
+            uploadFileIfEmpty(By.id("optional_document_file_" + index), pdfPath + File.separator + docFileName);
+        }*/
+
+
+
+    private void uploadFileIfEmpty(By locator, String filePath) {
+        WebElement field = Hooks.driver.findElement(locator);
+        if (isFieldEmpty(field)) {
+            field.sendKeys(filePath);
+            System.out.println("Uploaded file to: " + locator);
+        } else {
+            System.out.println("Field already filled, skipping upload for: " + locator);
+        }
+    }
+
+
+    /*private void setInputIfEmpty(By locator, String text) {
+        WebElement field = Hooks.driver.findElement(locator);
+        if (isFieldEmpty(field)) {
+            field.sendKeys(text);
+            System.out.println("Set input for: " + locator);
+        } else {
+            System.out.println("Field already filled, skipping input for: " + locator);
+        }
+    }*/
+
+}

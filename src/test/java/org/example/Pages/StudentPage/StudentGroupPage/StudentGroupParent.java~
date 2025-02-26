@@ -1,0 +1,22 @@
+package org.example.Pages.StudentPage.StudentGroupPage;
+
+import org.example.Pages.StudentPage.StudentParent;
+import org.example.StepsDef.Hooks;
+import org.openqa.selenium.By;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+
+public class StudentGroupParent extends StudentParent {
+
+    /**
+     * Clicks on the button with the given page title.
+     *
+     * @param pageTitle the title of the page that the button leads to
+     */
+    public void clickOnTicketsButton(String pageTitle) {
+        String currentURL = Hooks.driver.getCurrentUrl();
+        // Implementation for clicking on the "Tickets" button
+        Hooks.driver.findElement(By.xpath("//button[.//span[text()='"+pageTitle+"']]")).click();
+        wait.until(ExpectedConditions.not(ExpectedConditions.urlToBe(currentURL)));
+
+    }
+}

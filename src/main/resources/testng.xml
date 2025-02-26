@@ -1,0 +1,17 @@
+<suite name="Parallel Execution Suite" parallel="tests" thread-count="2">
+
+    <test name="Chrome Test">
+        <parameter name="browser" value="chrome"/>
+        <classes>
+            <class name="org.example.runner.TestNGRunner"/>
+        </classes>
+    </test>
+
+    <test name="Firefox Test">
+        <parameter name="browser" value="firefox"/>
+        <classes>
+            <class name="org.example.runner.TestNGRunner"/>
+        </classes>
+    </test>
+
+</suite>
