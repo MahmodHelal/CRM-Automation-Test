@@ -28,7 +28,8 @@ public class ITDetailsPage extends EmployeeParent {
     /**
      * Sets a random 6-digit fingerprint code.
      */
-    public void setFingerCode() {
+    public void setFingerCode() throws InterruptedException {
+        helperMethods.WAITForPopupToDisappear();
         int randomCode = random.nextInt(900000) + 100000; // Ensuring 6-digit random number
         WebElement fingerPrintField = WAIT.until(ExpectedConditions.presenceOfElementLocated(By.id("finger_print")));
         fingerPrintField.sendKeys(String.valueOf(randomCode));

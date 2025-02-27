@@ -26,7 +26,7 @@ public class JobInfoPage extends EmployeeParent {
     private static final double COMPANY_SOCIAL_SHARE_RATE = 0.6;
     private static final double EMPLOYEE_SOCIAL_SHARE_RATE = 0.4;
     private static final double EMPLOYEE_SOCIAL_SHARE_DEDUCTED_RATE = 0.2;
-    
+
 
     public WebElement getSectionHeader() {
         return driver.findElement(By.xpath("//h3[contains(text(),'Job Information')]"));
@@ -49,28 +49,74 @@ public class JobInfoPage extends EmployeeParent {
     // ---------------------------
 
     public void setHiringDate(String date) {
-        setDateField(By.xpath("//label[text()='Hiring Date*']/following::input[1]"), date);
+        setDateField(By.xpath("//label[text()='Hiring Date*']/following-sibling::div/div"), date);
     }
 
     public void setContractEndDate(String date) {
-        setDateField(By.xpath("//label[text()='Contract End date*']/following::input[1]"), date);
+        setDateField(By.xpath("//label[text()='Contract End date*']/following-sibling::div/div"), date);
     }
 
-    private void setDateField(By locator, String date) {
-        WebElement inputField = WAIT.until(ExpectedConditions.presenceOfElementLocated(locator));
-        inputField.clear();
-        inputField.sendKeys(convertToMMDDYYYY(date));
+    public void setDateField(By locator, String date) {
+        WebElement inputField = WAIT.until(ExpectedConditions.visibilityOfElementLocated(locator));
+
+        // Scroll to the input field
+        JS.executeScript("arguments[0].scrollIntoView({block: 'center'});", inputField);
+
+        // Click the datepicker button to open the calendar
+        WebElement datePickerButton = inputField.findElement(By.xpath(".//button"));
+        datePickerButton.click();
+
+        // Wait for the date picker to appear
+        WAIT.until(ExpectedConditions.visibilityOfElementLocated(By.className("p-datepicker")));
+
+        // Select the date from the calendar
+        selectDateFromCalendar(date);
+        ACTIONS.sendKeys(Keys.ESCAPE).perform();
     }
 
-    private String convertToMMDDYYYY(String date) {
+    private void selectDateFromCalendar(String date) {
+        //input will be 20/12/2020
+        String formattedDate = convertToPickerFormat(date);
+        // Split into components: day, month, year
+        String[] dateParts = formattedDate.split(" ");
+        String day = dateParts[0];   // "20"
+        String month = dateParts[1]; // "Dec"
+        String year = dateParts[2];  // "2020"
+
+        WebElement yearsButton = SHORT_WAIT.until(ExpectedConditions.elementToBeClickable(By.xpath("//button[contains(@class, 'p-datepicker-year')]")));
+        yearsButton.click();
+        // Select the correct year
+        WebElement yearElement = SHORT_WAIT.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[contains(text(), '" + year + "')]")));
+        yearElement.click();
+        // Select the correct month
+        WebElement monthElement = SHORT_WAIT.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[@class='p-monthpicker-month' and normalize-space(text())='" + month + "']")));
+        monthElement.click();
+
+        // Select the correct day, ensuring it's not disabled
+        WebElement dayElement = SHORT_WAIT.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[contains(normalize-space(.), '" + day + "') and not(contains(@class, 'p-disabled'))]")));
+        dayElement.click();
+    }
+// Convert date from "20/12/2020" → "20 Dec 2020"
+private String convertToPickerFormat(String date) {
+    try {
+        return LocalDate.parse(date, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                .format(DateTimeFormatter.ofPattern("d MMM yyyy")); // Format matches picker
+    } catch (Exception e) {
+        System.err.println("❌ Invalid date format: " + date);
+        return date; // Return original input if formatting fails
+    }
+}
+/*    // Convert date to match the format of the datepicker
+    private String convertToPickerFormat(String date) {
         try {
             return LocalDate.parse(date, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                    .format(DateTimeFormatter.ofPattern("MM/dd/yyyy"));
+                    .format(DateTimeFormatter.ofPattern("d MMM yyyy")); // Adjusted format
         } catch (Exception e) {
             System.err.println("❌ Invalid date format: " + date);
             return date;
         }
-    }
+    }*/
+
 
     // ---------------------------
     // ✅ Dropdown Selection Methods
@@ -116,7 +162,7 @@ public class JobInfoPage extends EmployeeParent {
     }
 
     public void setJobTitle(String jobTitle) {
-        setInputField(By.id("job_title"), jobTitle.replaceAll("[-&]", "").toLowerCase());
+        setInputField(By.id("job_title"), jobTitle.replaceAll("[-&123456789]", "").toLowerCase());
     }
     // ---------------------------
     // ✅ Salary Handling Methods

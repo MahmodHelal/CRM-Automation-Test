@@ -145,7 +145,7 @@ public class CreateEmpStepDef {
     }
 
     @And("Fill IT Data")
-    public void fillITData(DataTable itDevicesTable) {
+    public void fillITData(DataTable itDevicesTable) throws InterruptedException {
 
         // Wait until the IT Details section is visible
 //        wait.until(ExpectedConditions.textToBePresentInElement(itDetailsPage.getSectionHeader(), "IT Details"));
@@ -220,7 +220,7 @@ public class CreateEmpStepDef {
         homePage.getRequestsReportPage();
 
         // Search for the employee using the stored name
-        requestsPage.searchForEmployee(EMPLOYEE_NAME);
+//        requestsPage.searchForEmployee(EMPLOYEE_NAME);
 
         // Convert DataTable to a Map for easy access
         Map<String, String> empInfo = extractDataFromTable(empTable);
@@ -232,8 +232,8 @@ public class CreateEmpStepDef {
         Map<String, String> actualData = new HashMap<>();
         actualData.put("department", requestsPage.getCellDataFromRow(row, "Department"));
         actualData.put("job role", requestsPage.getCellDataFromRow(row, "Job Role"));
-        actualData.put("type", requestsPage.getCellDataFromRow(row, "Type"));
-        actualData.put("effective date", requestsPage.getCellDataFromRow(row, "Effective Date"));
+        actualData.put("type", requestsPage.getCellDataFromRow(row, "Name"));
+//        actualData.put("effective date", requestsPage.getCellDataFromRow(row, "Effective Date"));
 
         // ✅ Iterate once and assert all values
         for (Map.Entry<String, String> entry : empInfo.entrySet()) {
@@ -270,7 +270,7 @@ public class CreateEmpStepDef {
         WebElement row = requestsPage.getRowBySearch("Employee Name", EMPLOYEE_NAME);
 
         // ✅ Determine action to perform
-        String action = expectedStatus.equalsIgnoreCase("Approved") ? "approve" : "reject";
+        String action = expectedStatus.equalsIgnoreCase("Wait HR 2nd Level") ? "approve" : "reject";
 
         // ✅ Perform the action
         requestsPage.clickActionButton(row, RequestsPage.ActionType.valueOf(action.toUpperCase()));

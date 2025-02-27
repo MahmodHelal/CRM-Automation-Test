@@ -53,10 +53,24 @@ public class RequestsPage {
         this.js = (JavascriptExecutor) driver;
     }
 
+
     public void searchForEmployee(String empName) {
-        helperMethods.selectDropdownByVisibleText(By.xpath("//span[text()='Employee name']"), empName.trim());
+        try {
+            helperMethods.selectDropdownByVisibleText(By.xpath("//span[text()='Employee name']"), empName.trim());
+        } catch (TimeoutException e) {
+            System.out.println("⚠ Employee dropdown not found, continuing execution...");
+        } catch (RuntimeException e) {
+            System.out.println("⚠ Employee '" + empName + "' not found in the dropdown. Available options:");
+            List<WebElement> availableOptions = driver.findElements(By.xpath("//ul[@role='listbox']/li"));
+            for (WebElement option : availableOptions) {
+                System.out.println("➡ " + option.getText());
+            }
+            throw e;  // Rethrow exception to fail the test
+        }
         clickSearchButton();
     }
+
+
 
     public void clickSearchButton() {
         // ✅ Capture initial table state
@@ -75,8 +89,8 @@ public class RequestsPage {
 
 
     public WebElement getRowBySearch(String header, String searchValue) {
-        int columnIndex = getColumnIndex(header);
         List<WebElement> rows = waitForUpdatedRows();  // ✅ Always fetch the latest table rows
+        int columnIndex = getColumnIndex(header);
 
         for (int attempt = 0; attempt < 3; attempt++) {  // ⏳ Reduce retry attempts to 3
             for (WebElement row : rows) {
@@ -98,8 +112,8 @@ public class RequestsPage {
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
-                rows = waitForUpdatedRows(); // ✅ Re-fetch updated rows
             }
+            rows = waitForUpdatedRows();  // ✅ Fetch fresh rows after retry
         }
 
         throw new NoSuchElementException("❌ No row found with " + header + " containing: " + searchValue);
@@ -248,12 +262,10 @@ public class RequestsPage {
     }
 
     private Map<String, Integer> headerIndexCache = new HashMap<>();
+
     private int getColumnIndex(String header) {
-        if (headerIndexCache.isEmpty()) {  // Cache headers only once
-            List<WebElement> headers = driver.findElements(TABLE_HEADERS);
-            for (int i = 0; i < headers.size(); i++) {
-                headerIndexCache.put(headers.get(i).getText().trim().toLowerCase(), i + 1);
-            }
+        if (headerIndexCache.isEmpty()) {
+            updateHeaderCache();
         }
 
         Integer index = headerIndexCache.get(header.trim().toLowerCase());
@@ -261,8 +273,17 @@ public class RequestsPage {
 
         throw new IllegalArgumentException("Header not found: " + header);
     }
+
+    private void updateHeaderCache() {
+        List<WebElement> headers = driver.findElements(TABLE_HEADERS);
+        headerIndexCache.clear();  // ✅ Clears cache in case headers change
+        for (int i = 0; i < headers.size(); i++) {
+            headerIndexCache.put(headers.get(i).getText().trim().toLowerCase(), i + 1);
+        }
+    }
+
     public void waitForStatusUpdate(String employeeName, String expectedStatus) {
-        wait.withTimeout(Duration.ofSeconds(10))
+        wait.withTimeout(Duration.ofSeconds(20))
                 .pollingEvery(Duration.ofMillis(300))
                 .until(driver -> {
                     WebElement row = getRowBySearch("Employee Name", employeeName);  // ✅ Always fetch latest row

@@ -4,6 +4,8 @@ import org.example.StepsDef.Hooks;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.FluentWait;
+import org.openqa.selenium.support.ui.Wait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
 
@@ -30,7 +32,11 @@ public class HelperMethods {
             // **Check if popup exists instantly**
             if (!driver.findElements(By.className("swal2-popup")).isEmpty()) {
                 System.out.println("ℹ Popup detected. Waiting for it to disappear...");
-                SHORT_WAIT.until(ExpectedConditions.invisibilityOfElementLocated(By.className("swal2-popup")));
+                Wait<WebDriver> shortWait = new FluentWait<>(driver)
+                        .withTimeout(Duration.ofMillis(2000)) // 2000ms timeout
+                        .pollingEvery(Duration.ofMillis(50)) // Check every 50ms
+                        .ignoring(NoSuchElementException.class);
+                shortWait.until(ExpectedConditions.invisibilityOfElementLocated(By.className("swal2-popup")));
             } else {
                 System.out.println("✅ No popup detected. Skipping wait.");
             }
@@ -43,7 +49,7 @@ public class HelperMethods {
      */
     public void selectDropdownByVisibleText(By elemLocator, String value) {
         try {
-            WebElement dropdown = WAIT.until(ExpectedConditions.elementToBeClickable(elemLocator));
+            WebElement dropdown = WAIT.until(ExpectedConditions.visibilityOfElementLocated(elemLocator));
 //            JS.executeScript("arguments[0].click();", dropdown);
             dropdown.click();
             WAIT.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div//ul[@role='listbox']")));
@@ -99,6 +105,8 @@ public class HelperMethods {
             }
 
             ACTIONS.sendKeys(Keys.ESCAPE).perform();
+            Thread.sleep(100);
+
 
             WebElement selectedElement = WAIT.until(ExpectedConditions.visibilityOfElementLocated(
                     By.xpath("//span[text()='" + value.trim() + "'] | //div[@class='p-multiselect-label' and contains(normalize-space(), '" + value.trim() + "')]")
