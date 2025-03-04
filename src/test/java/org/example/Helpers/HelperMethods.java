@@ -27,6 +27,7 @@ public class HelperMethods {
     /**
      * WAITs for any blocking popup (e.g., SweetAlert) to disappear.
      */
+/*
     public void WAITForPopupToDisappear() {
         try {
             // **Check if popup exists instantly**
@@ -44,6 +45,15 @@ public class HelperMethods {
             System.out.println("⚠ Warning: Popup did not disappear within timeout.");
         }
     }
+*/
+    public void WAITForPopupToDisappear() {
+        try {
+            SHORT_WAIT.until(ExpectedConditions.invisibilityOfElementLocated(By.id("popupId")));
+        } catch (TimeoutException e) {
+            System.out.println("⚠ Popup timeout. Proceeding...");
+        }
+    }
+
     /**
      * Selects an option from a dropdown menu by visible text.
      */

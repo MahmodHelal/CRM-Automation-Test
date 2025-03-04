@@ -29,9 +29,8 @@ public class ITDetailsPage extends EmployeeParent {
      * Sets a random 6-digit fingerprint code.
      */
     public void setFingerCode() {
-        helperMethods.WAITForPopupToDisappear();
         int randomCode = random.nextInt(900000) + 100000; // Ensuring 6-digit random number
-        WebElement fingerPrintField = WAIT.until(ExpectedConditions.presenceOfElementLocated(By.id("finger_print")));
+        WebElement fingerPrintField = WAIT.until(ExpectedConditions.visibilityOfElementLocated(By.id("finger_print")));
         fingerPrintField.sendKeys(String.valueOf(randomCode));
 
         // ✅ Assertion to verify fingerprint code is set
@@ -44,8 +43,19 @@ public class ITDetailsPage extends EmployeeParent {
      * @param device The device name.
      */
     public void setItDevices(String device) {
-        helperMethods.selectDropdownByVisibleText(By.id("it_device"), device.trim());
+        try {
+            helperMethods.selectDropdownByVisibleText(By.id("it_device"), device.trim());
+        } catch (Exception e) {
+            System.out.println("Selection failed, waiting for popup to disappear before retrying...");
+            helperMethods.WAITForPopupToDisappear(); // Wait dynamically
+            try {
+                helperMethods.selectDropdownByVisibleText(By.id("it_device"), device.trim());
+            } catch (Exception retryException) {
+                throw new RuntimeException("Failed to select IT device after retrying: " + device, retryException);
+            }
+        }
     }
+
 
     /**
      * Fills out details for all IT devices, including Serial Number, Device Image, and Receipt Upload.

@@ -55,7 +55,7 @@ public class Hooks {
         driverThreadLocal.set(driver);
     }
 
-    @After
+/*    @After
     public void tearDown() {
         WebDriver driver = driverThreadLocal.get();
         if (driver != null) {
@@ -63,7 +63,7 @@ public class Hooks {
             driver.quit();
             driverThreadLocal.remove();
         }
-    }
+    }*/
 
     public static WebDriver getDriver() {
         return driverThreadLocal.get();

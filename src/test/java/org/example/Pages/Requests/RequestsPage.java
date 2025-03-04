@@ -6,9 +6,7 @@ import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.FluentWait;
-import org.openqa.selenium.support.ui.Wait;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import org.testng.Assert;
 
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
@@ -105,6 +103,7 @@ public class RequestsPage {
 
         // ✅ Wait for both row count change OR HTML content change
 //        waitForTableUpdate(initialRowCount, initialTableHTML);
+        waitForUpdatedRows();
     }
     public boolean performActionAndWaitForStatus(String employeeName, String expectedStatus) {
         // ✅ Fetch the row before clicking action
@@ -128,11 +127,13 @@ public class RequestsPage {
         // ✅ Refresh table to fetch updated data
         clickSearchButton();
         System.out.println("🔄 Refreshing table to check updated status...");
+        // ✅ Wait for final status update
+        return waitForFinalStatus(employeeName, expectedStatus);
 
-        // ✅ Wait for status update
-        boolean statusUpdated = waitForFinalStatus(employeeName, expectedStatus);
+//        // ✅ Wait for status update
+//        boolean statusUpdated = waitForFinalStatus(employeeName, expectedStatus);
 
-        if (!statusUpdated) {
+       /* if (!statusUpdated) {
             System.out.println("❌ Timeout: Status did not update to " + expectedStatus);
             return false;
         }
@@ -148,8 +149,9 @@ public class RequestsPage {
         String actualStatus = getCellDataFromRow(row, "Final Status").trim();
         System.out.println("✅ Final Status after action: " + actualStatus);
 
-        return actualStatus.equalsIgnoreCase(expectedStatus);
+        return actualStatus.equalsIgnoreCase(expectedStatus);*/
     }
+/*
     public boolean waitForFinalStatus(String employeeName, String expectedStatus) {
 
         try {
@@ -170,9 +172,25 @@ public class RequestsPage {
             return false;
         }
     }
+*/
+
+    public boolean waitForFinalStatus(String employeeName, String expectedStatus) {
+
+        return wait.until(driver -> {
+            WebElement row = getRowBySearch("Employee Name", employeeName);
+            String actualStatus = getCellDataFromRow(row, "Final Status").trim();
+
+            System.out.println("🔍 Checking status: Expected [" + expectedStatus + "], Found [" + actualStatus + "]");
+
+            if (actualStatus.equalsIgnoreCase(expectedStatus)) {
+                return true;  // ✅ Exit early if status matches
+            }
+            return false;
+        });
+    }
 
 
-
+/*
     public WebElement getRowBySearch(String header, String searchValue) {
         List<WebElement> rows = waitForUpdatedRows();  // ✅ Always fetch the latest table rows
         int columnIndex = getColumnIndex(header);
@@ -190,22 +208,40 @@ public class RequestsPage {
                 }
             }
 
-            // ✅ Wait before retrying if no match was found
+            // ✅ Short delay before retrying
             if (attempt < 2) {
-                try {
-                    Thread.sleep(200);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
+                waitFor(200);
+                rows = waitForUpdatedRows();
             }
-            rows = waitForUpdatedRows();  // ✅ Fetch fresh rows after retry
         }
 
         throw new NoSuchElementException("❌ No row found with " + header + " containing: " + searchValue);
     }
-    public boolean waitForQuickStatusUpdate(WebElement row, String expectedStatus) {
+*/
+public WebElement getRowBySearch(String header, String searchValue) {
+    waitForUpdatedRows(); // ✅ Ensure the table has refreshed first
+    int columnIndex = getColumnIndex(header);
+
+
+    return wait.until(ExpectedConditions.visibilityOfElementLocated(
+            By.xpath("//table//tr[td[" + columnIndex + "][normalize-space()='" + searchValue + "']]")
+    ));
+}
+
+
+
+    // Utility Method for Short Waits
+    private void waitFor(long millis) {
         try {
-            return new FluentWait<>(driver)
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    public void waitForQuickStatusUpdate(WebElement row, String expectedStatus) {
+        try {
+            new FluentWait<>(driver)
                     .withTimeout(Duration.ofSeconds(2))  // ✅ Short wait (2s)
                     .pollingEvery(Duration.ofMillis(500))
                     .ignoring(StaleElementReferenceException.class)
@@ -214,7 +250,6 @@ public class RequestsPage {
                         return actualStatus.equalsIgnoreCase(expectedStatus);
                     });
         } catch (TimeoutException e) {
-            return false;  // ✅ If status doesn't update in 2s, refresh is needed
         }
     }
 
@@ -253,7 +288,7 @@ public class RequestsPage {
             shortWait.until(ExpectedConditions.elementToBeClickable(SUBMIT_BUTTON)).click();
         }
 
-//        helperMethods.WAITForPopupToDisappear();
+        helperMethods.WAITForPopupToDisappear();
         waitForTableToLoad();
         waitForQuickStatusUpdate(row, expextedStatus);
     }
@@ -306,40 +341,45 @@ public class RequestsPage {
         return (String) js.executeScript("return document.querySelector('table').innerHTML;");
     }
 
+/*
     public List<WebElement> waitForUpdatedRows() {
         int initialRowCount = driver.findElements(TABLE_ROWS).size();
         long startTime = System.currentTimeMillis();
         long timeoutMillis = 10000; // 10 seconds timeout
-        List<WebElement> rows = null;
+        List<WebElement> rows;
 
         while (System.currentTimeMillis() - startTime < timeoutMillis) {
             rows = driver.findElements(TABLE_ROWS);
             int currentRowCount = rows.size();
 
-            // ✅ 1. Detect if table was cleared (full refresh case)
             if (currentRowCount == 0) {
                 System.out.println("⚠ Table was cleared! Waiting for new data...");
-            }
-
-            // ✅ 2. If at least one row is present, return updated rows
-            if (currentRowCount > 0 && currentRowCount != initialRowCount) {
+            } else if (currentRowCount > 0 && currentRowCount != initialRowCount) {
                 System.out.println("✅ Table updated! New row count: " + currentRowCount);
                 rows.forEach(row -> waitForNonEmptyCell(row, By.xpath("./td[1]")));
                 return rows;
             }
 
-            // ✅ 3. Retry after a short pause (to allow UI update)
-            try {
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+            waitFor(200);  // ✅ Short retry pause
         }
 
-        // ❌ If timeout occurs, return whatever rows exist
         System.out.println("⚠ Warning: Table update timeout. Returning latest detected rows.");
         return driver.findElements(TABLE_ROWS);
     }
+*/
+public List<WebElement> waitForUpdatedRows() {
+
+    return wait.until(driver -> {
+        List<WebElement> rows = driver.findElements(TABLE_ROWS);
+        if (rows.size() > 0) {
+            System.out.println("✅ Table updated! Row count: " + rows.size());
+            return rows;
+        }
+        return null;
+    });
+}
+
+
 
     private void waitForNonEmptyCell(WebElement row, By cellLocator) {
         new FluentWait<>(driver)
@@ -359,22 +399,41 @@ public class RequestsPage {
 
     private int getColumnIndex(String header) {
         if (headerIndexCache.isEmpty()) {
+            System.out.println("🔄 Header cache is empty. Updating...");
+            waitForUpdatedRows();
             updateHeaderCache();
         }
 
         Integer index = headerIndexCache.get(header.trim().toLowerCase());
         if (index != null) return index;
 
+        System.out.println("❌ Available headers: " + headerIndexCache.keySet());
         throw new IllegalArgumentException("Header not found: " + header);
     }
 
     private void updateHeaderCache() {
+
+        // ✅ Ensure table has at least one row before updating headers
+        wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//table/tbody/tr[1]"))); // Adjust XPath if needed
+
         List<WebElement> headers = driver.findElements(TABLE_HEADERS);
-        headerIndexCache.clear();  // ✅ Clears cache in case headers change
+
+        if (headers.isEmpty()) {
+            throw new RuntimeException("❌ No table headers found! Check TABLE_HEADERS locator.");
+        }
+
+        headerIndexCache.clear();
+        System.out.println("🔹 Extracted Headers (Raw & Processed):");
         for (int i = 0; i < headers.size(); i++) {
-            headerIndexCache.put(headers.get(i).getText().trim().toLowerCase(), i + 1);
+            String rawText = headers.get(i).getText();
+            String processedText = rawText.trim().toLowerCase();
+            headerIndexCache.put(processedText, i + 1);
+            System.out.println("  ✅ Raw: [" + rawText + "] | Processed: [" + processedText + "]");
         }
     }
+
+
+
 
 /*
     public boolean waitForStatusUpdate(String employeeName, String expectedStatus) {

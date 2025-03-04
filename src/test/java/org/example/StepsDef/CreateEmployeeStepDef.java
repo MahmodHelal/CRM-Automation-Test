@@ -77,8 +77,9 @@ public class CreateEmployeeStepDef {
 
         // Retrieve and store employee details
         Map<String, String> employeeInfo = empInformationPage.getEmployeeInfo();
+
         EMPLOYEE_NAME = employeeInfo.get("name");
-        EMPLOYEE_EMAIL = employeeInfo.get("work_email");
+//        EMPLOYEE_EMAIL = employeeInfo.get("work_email");
 
         // Validation: Ensure employee name is captured
         if (EMPLOYEE_NAME == null || EMPLOYEE_NAME.isBlank()) {
@@ -190,24 +191,36 @@ public class CreateEmployeeStepDef {
     @Then("Open Requests Page To Check Data")
     public void openRequestsPageToCheckData(DataTable empTable) {
         homePage.getRequestsReportPage();
+        requestsPage.waitForUpdatedRows();  // ✅ Ensure table is updated before searching
+
         Map<String, String> empInfo = extractDataFromTable(empTable);
 
         WebElement row = requestsPage.getRowBySearch("Employee Name", EMPLOYEE_NAME);
         if (row == null) {
+            System.out.println("❌ No row found for Employee: " + EMPLOYEE_NAME);
             throw new RuntimeException("❌ No row found for Employee: " + EMPLOYEE_NAME);
         }
+        System.out.println("✅ Employee row found: " + EMPLOYEE_NAME);
 
         Map<String, String> actualData = requestsPage.getEmployeeData(row);
+
         empInfo.forEach((key, expectedValue) -> {
+            if (!actualData.containsKey(key.toLowerCase())) {
+                throw new RuntimeException("❌ Key not found in actualData: " + key);
+            }
+
             String actualValue = actualData.get(key.toLowerCase());
+
             // ✅ Handle date formatting separately
             if (key.equalsIgnoreCase("effective date")) {
                 actualValue = requestsPage.formatDate(actualValue);
             }
+
+            System.out.println("🔍 Checking: " + key + " | Expected: " + expectedValue + " | Found: " + actualValue);
             Assert.assertEquals(actualValue, expectedValue, "❌ Mismatch found for " + key);
         });
-
     }
+
 
 
 
@@ -291,4 +304,6 @@ public class CreateEmployeeStepDef {
 
 
 
+    public void adelHanaka() {
+    }
 }
