@@ -51,15 +51,17 @@ public class EmpInformationPage extends EmployeeParent {
     // ---------------------------
 
     /**
-     * Generates and sets a random full name in the employee name field.
+     * Generates and sets a random full name in the employee name field,
+     * ensuring that single quotes are removed.
      */
     private void setEmpName() {
-        String fullName = faker.name().firstName() + " " +
-                faker.name().firstName() + " " +
-                faker.name().firstName() + " " +
-                faker.name().lastName();
+        String fullName = (faker.name().firstName().replace("'", "") + " " +
+                faker.name().firstName().replace("'", "") + " " +
+                faker.name().firstName().replace("'", "") + " " +
+                faker.name().lastName().replace("'", ""));
         driver.findElement(NAME_FIELD).sendKeys(fullName);
     }
+
 
     /**
      * Generates and sets a random mobile number starting with "01".

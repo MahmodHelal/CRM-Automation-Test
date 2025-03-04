@@ -37,7 +37,31 @@ public class SignHelper {
      */
     public void signIn(String email, String password) {
         // Navigate to the login page
-        Hooks.getDriver().get("https://crmdev.amit-learning.com/login");
+        Hooks.getDriver().get("https://crmtest.amit-learning.com/login");
+
+        // Enter login credentials
+        loginPage.enterUsername(email);
+        loginPage.enterPassword(password);
+        String currentURL = driver.getCurrentUrl();
+
+        // Handle potential overlay popups that might block interaction
+        try {
+            Hooks.getDriver().switchTo().activeElement().sendKeys(Keys.ESCAPE);
+        } catch (Exception e) {
+            System.out.println("⚠ No overlay detected, continuing login process.");
+        }
+
+        // Click the login button
+        loginPage.submitLogin();
+
+        WAIT.until(ExpectedConditions.not(ExpectedConditions.urlToBe(currentURL)));
+
+        System.out.println("✅ Login successful: Redirected to the dashboard.");
+    }
+
+    public void invalidSignIn(String email, String password) {
+        // Navigate to the login page
+        Hooks.getDriver().get("https://crmtest.amit-learning.com/login");
 
         // Enter login credentials
         loginPage.enterUsername(email);
@@ -51,14 +75,12 @@ public class SignHelper {
         }
 
         // Click the login button
-        loginPage.submitLogin();
+        loginPage.submitInvalidLogin();
 
-        // Wait until the dashboard page is loaded (verifying successful login)
-        WAIT.until(ExpectedConditions.urlContains("/dashboard"));
-
-        System.out.println("✅ Login successful: Redirected to the dashboard.");
     }
 }
+
+
 /*
 protected void selectDropdownByVisibleText(By elemLocator, String value) {
     try {

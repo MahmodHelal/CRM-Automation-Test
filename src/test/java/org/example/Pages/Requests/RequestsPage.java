@@ -6,6 +6,7 @@ import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.FluentWait;
+import org.openqa.selenium.support.ui.Wait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
 
@@ -69,13 +70,32 @@ public class RequestsPage {
         }
         clickSearchButton();
     }
+    public Map<String, String> getEmployeeData(WebElement row) {
+        Map<String, String> employeeData = new HashMap<>();
+        employeeData.put("department", getCellDataFromRow(row, "Department"));
+        employeeData.put("job role", getCellDataFromRow(row, "Job Role"));
+        employeeData.put("type", getCellDataFromRow(row, "Request Name"));
+        employeeData.put("effective date", getCellDataFromRow(row, "Effective Date"));
+        return employeeData;
+    }
+    public String formatDate(String dateStr) {
+        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+        try {
+            LocalDate date = LocalDate.parse(dateStr, inputFormatter);
+            return date.format(outputFormatter);
+        } catch (DateTimeParseException e) {
+            throw new RuntimeException("❌ Invalid date format received: " + dateStr, e);
+        }
+    }
 
 
 
     public void clickSearchButton() {
         // ✅ Capture initial table state
-        int initialRowCount = driver.findElements(TABLE_ROWS).size();
-        String initialTableHTML = getTableHTML();
+//        int initialRowCount = driver.findElements(TABLE_ROWS).size();
+//        String initialTableHTML = getTableHTML();
 
         // ✅ Click the search button
         wait.until(ExpectedConditions.elementToBeClickable(SEARCH_BUTTON)).click();
@@ -86,6 +106,71 @@ public class RequestsPage {
         // ✅ Wait for both row count change OR HTML content change
 //        waitForTableUpdate(initialRowCount, initialTableHTML);
     }
+    public boolean performActionAndWaitForStatus(String employeeName, String expectedStatus) {
+        // ✅ Fetch the row before clicking action
+        WebElement row = getRowBySearch("Employee Name", employeeName);
+        if (row == null) {
+            System.out.println("❌ No row found for Employee: " + employeeName);
+            return false;
+        }
+
+        // ✅ Determine the action (Approve/Reject) dynamically
+        ActionType actionType = (expectedStatus.toLowerCase().contains("wait") || expectedStatus.equalsIgnoreCase("approved") || expectedStatus.equalsIgnoreCase(""))
+                ? ActionType.APPROVE
+                : ActionType.REJECT;
+
+
+        System.out.println("🔄 Performing action: " + actionType + " for Employee: " + employeeName);
+
+        // ✅ Perform the action
+        clickActionButton(row, actionType, expectedStatus);
+
+        // ✅ Refresh table to fetch updated data
+        clickSearchButton();
+        System.out.println("🔄 Refreshing table to check updated status...");
+
+        // ✅ Wait for status update
+        boolean statusUpdated = waitForFinalStatus(employeeName, expectedStatus);
+
+        if (!statusUpdated) {
+            System.out.println("❌ Timeout: Status did not update to " + expectedStatus);
+            return false;
+        }
+
+        // ✅ Re-fetch the row after update
+        row = getRowBySearch("Employee Name", employeeName);
+        if (row == null) {
+            System.out.println("❌ No row found after refresh for Employee: " + employeeName);
+            return false;
+        }
+
+        // ✅ Fetch final status
+        String actualStatus = getCellDataFromRow(row, "Final Status").trim();
+        System.out.println("✅ Final Status after action: " + actualStatus);
+
+        return actualStatus.equalsIgnoreCase(expectedStatus);
+    }
+    public boolean waitForFinalStatus(String employeeName, String expectedStatus) {
+
+        try {
+            return wait.until(driver -> {
+                WebElement row = getRowBySearch("Employee Name", employeeName);
+                if (row == null) {
+                    System.out.println("🔄 Row not found yet, retrying...");
+                    return false;
+                }
+
+                String actualStatus = getCellDataFromRow(row, "Final Status").trim();
+                System.out.println("🔍 Checking status: Expected [" + expectedStatus + "], Found [" + actualStatus + "]");
+
+                return actualStatus.equalsIgnoreCase(expectedStatus);
+            });
+        } catch (TimeoutException e) {
+            System.out.println("❌ Timeout: Status did not update to " + expectedStatus);
+            return false;
+        }
+    }
+
 
 
     public WebElement getRowBySearch(String header, String searchValue) {
@@ -156,7 +241,7 @@ public class RequestsPage {
         APPROVE, REJECT
     }
 
-    public void clickActionButton(WebElement row, ActionType action) {
+    public void clickActionButton(WebElement row, ActionType action,String expextedStatus) {
         By buttonLocator = (action == ActionType.APPROVE) ? APPROVE_BUTTON : REJECT_BUTTON;
 
         row.findElement(buttonLocator).click();
@@ -168,9 +253,18 @@ public class RequestsPage {
             shortWait.until(ExpectedConditions.elementToBeClickable(SUBMIT_BUTTON)).click();
         }
 
-        helperMethods.WAITForPopupToDisappear();
+//        helperMethods.WAITForPopupToDisappear();
+        waitForTableToLoad();
+        waitForQuickStatusUpdate(row, expextedStatus);
     }
+    private void waitForTableToLoad() {
 
+        wait.until(driver -> {
+            WebElement table = driver.findElement(TABLE_CONTAINER);
+            List<WebElement> rows = table.findElements(TABLE_ROWS);
+            return !rows.isEmpty();  // ✅ Waits until at least one row is present
+        });
+    }
 
     private void waitForTableUpdate(int initialRowCount, String initialTableHTML) {
         new FluentWait<>(driver)
@@ -282,21 +376,28 @@ public class RequestsPage {
         }
     }
 
-    public void waitForStatusUpdate(String employeeName, String expectedStatus) {
-        wait.withTimeout(Duration.ofSeconds(20))
-                .pollingEvery(Duration.ofMillis(300))
-                .until(driver -> {
-                    WebElement row = getRowBySearch("Employee Name", employeeName);  // ✅ Always fetch latest row
-                    String actualStatus = row.findElement(By.xpath("./td[" + getColumnIndex("Final Status") + "]")).getText().trim();
+/*
+    public boolean waitForStatusUpdate(String employeeName, String expectedStatus) {
 
-                    // ✅ Ensure the row is fully updated
-                    boolean allDataUpdated = actualStatus.equalsIgnoreCase(expectedStatus)
-                            && !getCellDataFromRow(row, "Department").isEmpty()
-                            && !getCellDataFromRow(row, "Job Role").isEmpty();
+        return wait.until(driver -> {
+            try {
+                WebElement row = getRowBySearch("Employee Name", employeeName);
+                if (row == null) {
+                    System.out.println("⚠ No row found for Employee: " + employeeName);
+                    return false;
+                }
 
-                    return allDataUpdated;
-                });
+                String actualStatus = getCellDataFromRow(row, "Final Status").trim();
+                System.out.println("🔍 Checking status... Expected: " + expectedStatus + " | Actual: " + actualStatus);
+
+                return actualStatus.equalsIgnoreCase(expectedStatus);
+            } catch (StaleElementReferenceException e) {
+                System.out.println("⚠ Stale row detected. Retrying...");
+                return false; // Retry fetching the row
+            }
+        });
     }
+*/
 
 
 

@@ -1,5 +1,5 @@
-/*
 package org.example.StepsDef;
+
 
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.And;
@@ -7,27 +7,19 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.example.Helpers.SignHelper;
-import org.example.Pages.Employees.EmployeesActions.CreateEmployee.EmpInformationPage;
-import org.example.Pages.Employees.EmployeesActions.CreateEmployee.ITDetailsPage;
-import org.example.Pages.Employees.EmployeesActions.CreateEmployee.JobInfoPage;
-import org.example.Pages.Employees.EmployeesActions.CreateEmployee.DocsPage;
+import org.example.Pages.Employees.EmployeesActions.CreateEmployee.*;
 import org.example.Pages.HomePage;
 import org.example.Pages.LoginPage;
 import org.example.Pages.Requests.RequestsPage;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
+
 import java.time.Duration;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
-
-public class CreateEmpStepDef {
-
+public class CreateEmployeeStepDef {
     // Page Object Instances
     private final LoginPage loginPage = new LoginPage();
     private final HomePage homePage = new HomePage();
@@ -37,12 +29,18 @@ public class CreateEmpStepDef {
     private final DocsPage uploadDocumentsPage = new DocsPage();
     private final RequestsPage requestsPage = new RequestsPage();
     private final SignHelper signHelper = new SignHelper();
+
     // WebDriverWait using Hooks.getDriver()
     private final WebDriverWait wait = new WebDriverWait(Hooks.getDriver(), Duration.ofSeconds(50));
 
-    // Test Data (For Future Use)
-    private  String EMPLOYEE_NAME = null;
+    // Test Data (To maintain test state)
+    private String EMPLOYEE_NAME = null;
     private String EMPLOYEE_EMAIL = null;
+
+
+    /**
+     * Step: User logs in using the given username and password.
+     */
     @Given("user enters username {string} and password {string}")
     public void userEntersUserNameAndPassword(String userName, String password) {
         loginPage.enterUsername(userName);
@@ -50,53 +48,53 @@ public class CreateEmpStepDef {
         loginPage.submitLogin();
     }
 
+
+    /**
+     * Step: User navigates to the Employees Page.
+     */
     @When("user opens the Employees Page")
     public void userOpensTheEmployeesPage() {
         homePage.getEmployeesPage();
     }
 
-    @And("clicks on the Create Employee button")
-    public void clickOnCreateEmployeeButton() {
+
+    /**
+     * Step: User Opens the "Create Employee" Page.
+     */
+    @And("opens Create Employee page")
+    public void opensCreateEmployeePage() {
         empInformationPage.clickCreateEmployeeButton();
+        Assert.assertTrue(Objects.requireNonNull(Hooks.getDriver().getCurrentUrl()).contains("create-employee"), "Failed to open Create Employee page");
     }
 
-    @Then("the Create Employee Page will open")
-    public void theCreateEmployeePageWillOpen() {
-        // Future Optimization: Use Hooks or Helper methods to verify page navigation
-        wait.until(ExpectedConditions.urlContains("create-employee"));
-    }
 
-    @And("fills the personal information")
+    /**
+     * Step: Fills in the personal information for the new employee.
+     */
+    @Then("fills the personal information")
     public void fillsThePersonalInformation() {
-        // Wait for Employee Information Section to load
-//        wait.until(ExpectedConditions.textToBePresentInElement(empInformationPage.getSectionHeader(), "Employee Information"));
-
         empInformationPage.fillEmployeeInfo(EMPLOYEE_NAME);
 
-        // Retrieve employee info
+        // Retrieve and store employee details
         Map<String, String> employeeInfo = empInformationPage.getEmployeeInfo();
-
-        // Assign the employee name to EMPLOYEE_NAME
         EMPLOYEE_NAME = employeeInfo.get("name");
         EMPLOYEE_EMAIL = employeeInfo.get("work_email");
 
-
+        // Validation: Ensure employee name is captured
         if (EMPLOYEE_NAME == null || EMPLOYEE_NAME.isBlank()) {
-            throw new RuntimeException("❌ EMPLOYEE_NAME is null or empty. Ensure the employee name is correctly captured.");
+            throw new RuntimeException("❌ EMPLOYEE_NAME is missing. Ensure correct data entry.");
         }
 
         System.out.println("✔ EMPLOYEE_NAME captured: " + EMPLOYEE_NAME);
-        // Click Next Button
+
         empInformationPage.nextButton();
-        System.out.println("Completed filling personal information.");
     }
 
-
+    /**
+     * Step: Fills in the job information.
+     */
     @And("fills the job information")
     public void fillsTheJobInformation(DataTable jobInfoTable) {
-        // Wait until 'Employee Information' section is present and contains the text
-//        wait.until(ExpectedConditions.textToBePresentInElement(jobInfoPage.getSectionHeader(), "Job Information"));
-
         Map<String, String> jobInfo = extractDataFromTable(jobInfoTable);
 
         jobInfo.forEach((key, value) -> {
@@ -129,58 +127,41 @@ public class CreateEmpStepDef {
                 default -> System.out.println("⚠ Warning: Unrecognized job information key: " + key);
             }
         });
-        // Retrieve employee info
-        jobInfoPage.getJobInfoData();
 
         jobInfoPage.nextButton();
     }
 
+
+    /**
+     * Step: Fills IT-related information for the new employee.
+     */
     @And("Fill IT Data")
-    public void fillITData(DataTable itDevicesTable) throws InterruptedException {
-
-        // Wait until the IT Details section is visible
-//        wait.until(ExpectedConditions.textToBePresentInElement(itDetailsPage.getSectionHeader(), "IT Details"));
-
-        // Extract DataTable into a key-value map for easy handling
+    public void fillITData(DataTable itDevicesTable) {
         Map<String, String> itDevices = extractDataFromTable(itDevicesTable);
-
         itDetailsPage.setFingerCode();
 
-        // Iterate over the DataTable entries and handle the corresponding action using a switch-case
         itDevices.forEach((key, value) -> {
-            try {
-                switch (key.toLowerCase()) {
-                    case "it devices":
-                        itDetailsPage.processItDevices(value);
-                        break;
-                    default:
-                        System.err.println("Warning: Unrecognized IT Data key: " + key);
-                        break;
-                }
-            } catch (Exception e) {
-                System.err.println("Error processing IT data for key: " + key);
-                e.printStackTrace();
+            if (key.equalsIgnoreCase("it devices")) {
+                itDetailsPage.processItDevices(value);
+            } else {
+                System.err.println("Warning: Unrecognized IT Data key: " + key);
             }
         });
 
-        // Proceed to the next step
         itDetailsPage.nextButton();
-        System.out.println("Completed filling IT information.");
     }
 
+
+    /**
+     * Step: Uploads necessary documents and submits the employee creation form.
+     */
     @And("Fill Documents Data And Submit")
     public void fillDocumentsDataAndSubmit(DataTable DocumentsTable) {
-//        wait.until(ExpectedConditions.textToBePresentInElement(uploadDocumentsPage.getSectionHeader(), "Documents"));
-
         Map<String, String> docs = extractDataFromTable(DocumentsTable);
 
-        // Execute actions based on the provided keys using switch-case
-        for (Map.Entry<String, String> entry : docs.entrySet()) {
-            String key = entry.getKey().toLowerCase();
-            String value = entry.getValue();
-
-            switch (key) {
-                case "gender":
+        docs.forEach((key, value) -> {
+            switch (key.toLowerCase()) {
+                case "gender" -> {
                     uploadDocumentsPage.setGender(DocsPage.Gender.valueOf(value.toUpperCase()));
                     String gender = docs.get("Gender");
                     if ("Male".equalsIgnoreCase(gender)) {
@@ -192,109 +173,118 @@ public class CreateEmpStepDef {
                     uploadDocumentsPage.uploadForm111InsurancePdf();
                     uploadDocumentsPage.uploadInsurancePrintPdf();
                     uploadDocumentsPage.uploadEmploymentOfficeCertificatePdf();
-                    break;
-                case "optional documents":
-                    uploadDocumentsPage.handleOptionalDocuments(value);
-                    break;
-                default:
-                    System.out.println("Unrecognized document key: " + key);
-                    break;
+                }
+                case "optional documents" -> uploadDocumentsPage.handleOptionalDocuments(value);
+                default -> System.out.println("Unrecognized document key: " + key);
             }
-        }
+        });
 
         uploadDocumentsPage.submitButton();
     }
 
+
+
+    /**
+     * Step: Verifies the created employee request in the Requests page.
+     */
     @Then("Open Requests Page To Check Data")
     public void openRequestsPageToCheckData(DataTable empTable) {
-        // ✅ Navigate to Requests Report Page
         homePage.getRequestsReportPage();
-
-        // ✅ Convert DataTable to a Map
         Map<String, String> empInfo = extractDataFromTable(empTable);
 
-        // ✅ Fetch row ONCE to avoid redundant DOM interactions
         WebElement row = requestsPage.getRowBySearch("Employee Name", EMPLOYEE_NAME);
         if (row == null) {
             throw new RuntimeException("❌ No row found for Employee: " + EMPLOYEE_NAME);
         }
 
-        // ✅ Extract required values from the row
         Map<String, String> actualData = requestsPage.getEmployeeData(row);
-
-        // ✅ Iterate once and assert all values
         empInfo.forEach((key, expectedValue) -> {
             String actualValue = actualData.get(key.toLowerCase());
-
-            if (actualValue == null) {
-                System.out.println("❌ Unrecognized key: " + key);
-                return;
-            }
-
             // ✅ Handle date formatting separately
             if (key.equalsIgnoreCase("effective date")) {
                 actualValue = requestsPage.formatDate(actualValue);
             }
-
-            // ✅ Print & Assert
-            System.out.println("✔ Checking " + key + " | Expected: " + expectedValue + " | Actual: " + actualValue);
             Assert.assertEquals(actualValue, expectedValue, "❌ Mismatch found for " + key);
         });
+
     }
 
 
-    @And("take a specific action on the request with status {string}")
-    public void takeASpecificActionOnTheRequestWithStatus(String expectedStatus) {
-        System.out.println("🔎 Searching for Employee: " + EMPLOYEE_NAME);
 
-        boolean actionPerformed = requestsPage.performActionAndWaitForStatus(EMPLOYEE_NAME, expectedStatus);
-
-        if (!actionPerformed) {
-            throw new AssertionError("❌ The request status did not update as expected.");
-        }
-
-        System.out.println("✅ Action performed successfully, and status updated to: " + expectedStatus);
-    }
-
-    @Then("User Sign out")
-    public void userSignOut() {
-        signHelper.signOut();
-        System.out.println("✅ User signed out successfully.");
-    }
-
-    @When("That Employee tries to enter username and password {string}")
-    public void thatEmployeeTriesToEnterUsernameAndPassword(String password) {
-        signHelper.invalidSignIn(EMPLOYEE_EMAIL, password);
-        loginPage.dismissFailMessage();
-    }
-
-    @Given("Hr first level enters username HrFirstMail {string} and password {string}")
-    public void hrFirstLevelEntersUsernameHrFirstMailAndPassword(String username, String password) {
-        signHelper.signIn(username, password);
-        System.out.println("✅ HR First Level signed in successfully.");
-    }
-
+    /**
+     * Step: HR first level approves the hiring request.
+     */
     @And("approve hiring request for that employee {string}")
     public void approveHiringRequestForThatEmployee(String expectedStatus) {
         boolean approvalSuccessful = requestsPage.performActionAndWaitForStatus(EMPLOYEE_NAME, expectedStatus);
-
         if (!approvalSuccessful) {
-            throw new AssertionError("❌ The request status did not update as expected.");
+            throw new AssertionError("❌ Request status update failed. Expected status: " + expectedStatus);
         }
-
-        System.out.println("✅ Hiring request approved successfully.");
     }
 
+
+    /**
+     * Step: HR second level signs in and approves the request.
+     */
     @Given("Hr second level enters username {string} and password {string}")
     public void hrSecondLevelEntersUsernameAndPassword(String username, String password) {
         signHelper.signIn(username, password);
-        System.out.println("✅ HR Second Level signed in successfully.");
+    }
+    @Given("It second level enters username {string} and password {string}")
+    public void itSecondLevelEntersUsernameAndPassword(String username, String password) {
+        signHelper.signIn(username, password);
+    }
+
+
+    @Given("KPI second level enters username {string} and password {string}")
+    public void kpiSecondLevelEntersUsernameAndPassword(String username, String password) {
+        signHelper.signIn(username, password);
+    }
+
+    @Given("CFO enters username {string} and password {string}")
+    public void cfoEntersUsernameAndPassword(String username, String password) {
+        signHelper.signIn(username, password);
+    }
+
+    @Given("Owner enters username {string} and password {string}")
+    public void ownerEntersUsernameAndPassword(String username, String password) {
+        signHelper.signIn(username, password);
+    }
+
+    @Given("COO enters username {string} and password {string}")
+    public void cooEntersUsernameAndPassword(String username, String password) {
+        signHelper.signIn(username, password);
+    }
+
+    @Given("CEO enters username {string} and password {string}")
+    public void ceoEntersUsernameAndPassword(String username, String password) {
+        signHelper.signIn(username, password);
     }
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Step: User signs out.
+     */
+    @Then("User Sign out")
+    public void userSignOut() {
+        signHelper.signOut();
+    }
+
+    /**
+     * Utility method: Extracts data from a DataTable into a Map.
+     */
     private Map<String, String> extractDataFromTable(DataTable dataTable) {
         return dataTable.asMap(String.class, String.class);
     }
@@ -302,4 +292,3 @@ public class CreateEmpStepDef {
 
 
 }
-*/

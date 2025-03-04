@@ -61,6 +61,7 @@ public class EmployeeParent {
         String currentUrl = driver.getCurrentUrl();
         WAIT.until(ExpectedConditions.elementToBeClickable(By.xpath("//button[.//span[text()='Add New']]"))).click();
         WAIT.until(ExpectedConditions.not(ExpectedConditions.urlToBe(currentUrl)));
+        WAIT.until(ExpectedConditions.urlContains("create-employee"));
 //        WAIT.until(ExpectedConditions.textToBe(HEADER_OF_SECTION, "Employee Information"));
     }
 
