@@ -34,11 +34,11 @@ public class RequestsPage {
 
     // Locators
     private static final By TABLE_HEADERS = By.xpath("//table//thead//th");
-    private static final By TABLE_ROWS = By.xpath("//table//tbody//tr");
+    private static final By TABLE_ROWS = By.xpath("//table//tbody//tr[1]");
     private static final By SEARCH_BUTTON = By.xpath("//button[.//span[contains(text(),'Search')]]");
     private static final By TABLE_CONTAINER = By.cssSelector("table.p-datatable-table tbody");
-    private static final By APPROVE_BUTTON = By.xpath(".//button[contains(@class, 'approve-btn')]");
-    private static final By REJECT_BUTTON = By.xpath(".//button[contains(@class, 'reject-btn')]");
+    private static final By APPROVE_BUTTON = By.xpath(".//button[span[contains(@class, 'pi-check')]]");
+    private static final By REJECT_BUTTON = By.xpath(".//button[span[contains(@class, 'pi-times')]]");
     private static final By CONFIRM_BUTTON = By.xpath("//button[contains(@class, 'swal2-confirm') and text()='Yes']");
     private static final By COMMENT_TEXTAREA = By.xpath("//textarea[@placeholder='Enter your comment here...']");
     private static final By SUBMIT_BUTTON = By.xpath("//button[contains(@class, 'swal2-confirm') and text()='Submit']");
@@ -124,9 +124,7 @@ public class RequestsPage {
         // ✅ Perform the action
         clickActionButton(row, actionType, expectedStatus);
 
-        // ✅ Refresh table to fetch updated data
-        clickSearchButton();
-        System.out.println("🔄 Refreshing table to check updated status...");
+        waitForUpdatedRows();
         // ✅ Wait for final status update
         return waitForFinalStatus(employeeName, expectedStatus);
 
@@ -368,13 +366,31 @@ public WebElement getRowBySearch(String header, String searchValue) {
     }
 */
 public List<WebElement> waitForUpdatedRows() {
-
     return wait.until(driver -> {
         List<WebElement> rows = driver.findElements(TABLE_ROWS);
-        if (rows.size() > 0) {
-            System.out.println("✅ Table updated! Row count: " + rows.size());
-            return rows;
+
+        if (rows.isEmpty()) {
+            System.out.println("⏳ No rows yet. Waiting...");
+            return null;
         }
+
+        // Re-fetch the table rows inside the loop to avoid stale element reference
+        for (int i = 0; i < rows.size(); i++) {
+            try {
+                rows = driver.findElements(TABLE_ROWS); // Re-locate the rows to avoid StaleElementReferenceException
+                WebElement firstCell = rows.get(i).findElement(By.xpath("./td[1]"));
+                String cellText = firstCell.getText().trim();
+
+                if (!cellText.isEmpty() && !cellText.equals("Loading...")) { // Adjust based on actual placeholder text
+                    System.out.println("✅ Table updated! Row count: " + rows.size());
+                    return rows;
+                }
+            } catch (StaleElementReferenceException e) {
+                System.out.println("⚠️ Stale element detected, re-fetching rows...");
+                rows = driver.findElements(TABLE_ROWS); // Re-locate the elements and retry
+            }
+        }
+
         return null;
     });
 }

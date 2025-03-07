@@ -79,7 +79,7 @@ public class CreateEmployeeStepDef {
         Map<String, String> employeeInfo = empInformationPage.getEmployeeInfo();
 
         EMPLOYEE_NAME = employeeInfo.get("name");
-//        EMPLOYEE_EMAIL = employeeInfo.get("work_email");
+        EMPLOYEE_EMAIL = employeeInfo.get("work_email");
 
         // Validation: Ensure employee name is captured
         if (EMPLOYEE_NAME == null || EMPLOYEE_NAME.isBlank()) {
@@ -273,6 +273,11 @@ public class CreateEmployeeStepDef {
     public void ceoEntersUsernameAndPassword(String username, String password) {
         signHelper.signIn(username, password);
     }
+    @Then("login with new mail{string}")
+    public void loginWithNewMail(String passsord) {
+        signHelper.signIn(EMPLOYEE_EMAIL, passsord);
+    }
+
 
 
 

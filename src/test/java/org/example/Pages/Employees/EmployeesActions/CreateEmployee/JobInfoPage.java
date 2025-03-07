@@ -140,6 +140,7 @@ private String convertToPickerFormat(String date) {
 
         Arrays.stream(levels.split(",")).map(String::trim).forEach(level -> {
             helperMethods.selectDropdownByVisibleText(By.id("approval_level"), level);
+            System.out.println("Approval Level: " + level);
 
             ACTIONS.sendKeys(Keys.ESCAPE).perform();
             // ✅ Verify selection is saved in UI
