@@ -15,7 +15,7 @@
     </properties>
 
     <dependencies>
-        <!-- Selenium dependencies -->
+        <!-- Selenium Dependencies -->
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-java</artifactId>
@@ -27,7 +27,7 @@
             <version>4.26.0</version>
         </dependency>
 
-        <!-- REST Assured for API tests -->
+        <!-- REST Assured for API Testing -->
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
@@ -35,7 +35,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Cucumber dependencies -->
+        <!-- Cucumber Dependencies -->
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-java</artifactId>
@@ -47,15 +47,21 @@
             <version>7.14.0</version>
         </dependency>
 
-        <!-- Apache POI for Excel and OOXML -->
+        <!-- TestNG Dependency -->
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>7.8.0</version>
+        </dependency>
+
+        <!-- Apache POI for Excel Files -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
             <version>5.3.0</version>
         </dependency>
 
-
-        <!-- OpenCSV for CSV files -->
+        <!-- OpenCSV for CSV Handling -->
         <dependency>
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
@@ -66,41 +72,46 @@
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>RELEASE</version>
+            <version>24.0.1</version>
         </dependency>
+
+        <!-- Dotenv for Environment Variables -->
         <dependency>
             <groupId>io.github.cdimascio</groupId>
             <artifactId>dotenv-java</artifactId>
             <version>3.0.0</version>
         </dependency>
 
-        <!--        &lt;!&ndash; SLF4J API &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>org.slf4j</groupId>-->
-<!--            <artifactId>slf4j-api</artifactId>-->
-<!--            <version>2.0.12</version>-->
-<!--        </dependency>-->
-
-<!--        &lt;!&ndash; SLF4J Simple Binding &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>org.slf4j</groupId>-->
-<!--            <artifactId>slf4j-simple</artifactId>-->
-<!--            <version>2.0.12</version>-->
-<!--        </dependency>-->
+        <!-- WebDriver Manager for Managing Browser Drivers -->
         <dependency>
             <groupId>io.github.bonigarcia</groupId>
             <artifactId>webdrivermanager</artifactId>
             <version>5.8.0</version>
         </dependency>
 
-
-
-        <!-- JavaFaker -->
+        <!-- Java Faker for Generating Test Data -->
         <dependency>
             <groupId>com.github.javafaker</groupId>
             <artifactId>javafaker</artifactId>
             <version>1.0.2</version>
         </dependency>
+
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Maven Surefire Plugin for Running TestNG -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0</version>  <!-- Stable version -->
+                <configuration>
+                    <suiteXmlFiles>
+                        <suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
+                    </suiteXmlFiles>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

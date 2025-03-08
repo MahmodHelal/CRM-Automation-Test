@@ -5,8 +5,11 @@ import io.cucumber.testng.CucumberOptions;
 import org.testng.annotations.DataProvider;
 
 @CucumberOptions(
-        features = "src/main/resources/Features/CreateEmployee.feature",
-        glue = {"org.example.StepsDef.CreateEmployee"},
+        features = {
+                "src/main/resources/Features/Create Employee/CreateCareerServiceEmployee.feature",
+//                "src/main/resources/Features/Create Employee/CreateCoordinatorsEmployee.feature"
+        },
+        glue = {"org.example.StepsDef"},
         plugin = {
                 "pretty",
                 "html:target/cucumber-reports.html",
@@ -17,7 +20,7 @@ import org.testng.annotations.DataProvider;
         dryRun = false
 )
 public class TestNGRunner extends AbstractTestNGCucumberTests {
-    // Optionally enable parallel execution
+
     @Override
     @DataProvider(parallel = true)
     public Object[][] scenarios() {

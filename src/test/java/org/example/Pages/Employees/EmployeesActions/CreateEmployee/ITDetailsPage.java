@@ -71,7 +71,7 @@ public class ITDetailsPage extends EmployeeParent {
 
 
             try {
-                String serialNumber = generateSerialNumber(header);
+                String serialNumber = generateSerialNumber();
                 String formattedFileName = formatFileName(header);
                 String filePath = PDF_PATH + File.separator + formattedFileName + ".pdf";
                 String imagePath = IMG_PATH + File.separator + formattedFileName + ".png";
@@ -100,7 +100,7 @@ public class ITDetailsPage extends EmployeeParent {
      */
     private void applyDeviceSpecificSettings(String header) {
         if (header.equalsIgnoreCase("SIM card")) {
-            setWorkMobileNumber(WORK_MOBILE_NUMBER);
+            setWorkMobileNumber();
         } else if (header.equalsIgnoreCase("Others")) {
             setDeviceType(CUSTOM_DEVICE_TYPE);
         }
@@ -130,13 +130,24 @@ public class ITDetailsPage extends EmployeeParent {
     /**
      * Sets the work mobile number for the "SIM card" device.
      *
-     * @param mobileNumber The mobile number to set.
      */
-    private void setWorkMobileNumber(String mobileNumber) {
+    private void setWorkMobileNumber() {
         WebElement workMobile = Hooks.getDriver().findElement(By.id("work_mobile_number"));
+
+        // Generate a random mobile number ONCE and store it
+        String mobileNumber = generateMobileNumber();
+
+        // Use the same number for input and validation
         workMobile.sendKeys(mobileNumber);
+
+        // Assertion to check if the entered number is correctly set
         Assert.assertEquals(workMobile.getAttribute("value"), mobileNumber,
                 "Work mobile number was not set correctly.");
+    }
+    private String generateMobileNumber() {
+        return  "01" + random.ints(9, 0, 10)
+                .mapToObj(String::valueOf)
+                .reduce("", String::concat);
     }
 
     /**
@@ -167,7 +178,7 @@ public class ITDetailsPage extends EmployeeParent {
                     "//div[contains(@class, 'device-card') and .//h4[contains(text(),'" + header + "')]]"));
 
             try {
-                String expectedSerial = generateSerialNumber(header);
+                String expectedSerial = generateSerialNumber();
                 WebElement serialNumberField = section.findElement(By.xpath(".//input[@placeholder='Enter Serial Number']"));
 
                 Assert.assertEquals(serialNumberField.getAttribute("value"), expectedSerial,
@@ -204,10 +215,10 @@ public class ITDetailsPage extends EmployeeParent {
     /**
      * Generates a serial number based on the device type.
      *
-     * @param deviceType The type of device.
+//     * @param deviceType The type of device.
      * @return The generated serial number.
      */
-    private String generateSerialNumber(String deviceType) {
+    /*private String generateSerialNumber(String deviceType) {
         switch (deviceType.toLowerCase()) {
             case "mobile": return "111111111";
             case "laptop": return "222222222";
@@ -219,6 +230,13 @@ public class ITDetailsPage extends EmployeeParent {
             case "others": return "888888888";
             default: return "999999999";
         }
+    }*/
+
+    public String generateSerialNumber() {
+        return String.format("%04d-%04d-%04d",
+                random.nextInt(10000), // Generates a 4-digit number (0000 to 9999)
+                random.nextInt(10000),
+                random.nextInt(10000));
     }
 
     /**

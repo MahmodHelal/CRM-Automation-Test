@@ -18,7 +18,7 @@ public class JobInfoPage extends EmployeeParent {
 
     // ✅ Salary & Insurance Constants
     private static final int MIN_SALARY = 5000;
-    private static final int MAX_SALARY = 20000;
+    private static final double MAX_SALARY = 999999.99;
     private static final double GROSS_MULTIPLIER = 1.25;
     private static final double BASIC_SALARY_PERCENT = 0.6;
     private static final double SOCIAL_SALARY_PERCENT = 0.8;
@@ -42,7 +42,13 @@ public class JobInfoPage extends EmployeeParent {
     }
 
     // ✅ Random Salary Calculation
-    private final double randomSalary = random.nextInt(MAX_SALARY - MIN_SALARY + 1) + MIN_SALARY;
+
+    private final double getRandomSalary() {
+        double salary =  MIN_SALARY + (Math.random() * (MAX_SALARY - MIN_SALARY));
+        return Math.round(salary * 100.0) / 100.0; // Rounds to 2 decimal places
+
+    }
+
 
     // ---------------------------
     // ✅ Date Handling Methods
@@ -191,17 +197,17 @@ private String convertToPickerFormat(String date) {
 
 
     public void setNetSalary() {
-        setInputField(By.id("net_salary"), String.valueOf(randomSalary));
+        setInputField(By.id("net_salary"), String.valueOf(getRandomSalary()));
         setDeductedInTax();
         setNotDeductedInTax();
     }
 
     private void setDeductedInTax() {
-        setInputField(By.id("monthly_income_tax"), String.format("%.2f", randomSalary * 0.10));
+        setInputField(By.id("monthly_income_tax"), String.format("%.2f", getRandomSalary() * 0.10));
     }
 
     private void setNotDeductedInTax() {
-        setInputField(By.id("non_monthly_income_tax"), String.format("%.2f", randomSalary * 0.05));
+        setInputField(By.id("non_monthly_income_tax"), String.format("%.2f", getRandomSalary() * 0.05));
     }
 
     // ---------------------------
@@ -212,7 +218,7 @@ private String convertToPickerFormat(String date) {
         helperMethods.selectDropdownByVisibleText(By.id("social_insurance_status"), status);
         if (status.equalsIgnoreCase("added")) {
             setSocialInsuranceNumber();
-            setSocialInsuranceGrossSalary(randomSalary);
+            setSocialInsuranceGrossSalary(getRandomSalary());
         }
     }
 
@@ -222,6 +228,10 @@ private String convertToPickerFormat(String date) {
 
     private void setSocialInsuranceGrossSalary(double netSalary) {
         double grossSalary = netSalary * GROSS_MULTIPLIER;
+        // Ensure gross salary does not exceed MAX_SALARY
+        if (grossSalary > MAX_SALARY) {
+            grossSalary = MAX_SALARY;
+        }
         setInputField(By.id("gross_salary"), String.format("%.2f", grossSalary));
         setSocialInsuranceBasicSalary(grossSalary * BASIC_SALARY_PERCENT);
         setSocialInsuranceSalary(grossSalary * SOCIAL_SALARY_PERCENT);
@@ -272,19 +282,19 @@ private String convertToPickerFormat(String date) {
     }
 
     private void setTotalCostPerYearMI(double totalCost)  {
-        setInputField(By.id("total_medical_cost"), String.valueOf(totalCost));
+        setInputField(By.id("total_medical_cost"), String.format("%.2f",totalCost));
         setCompanySharePerYearMI(totalCost * 90 / 100);
         setEmployeeSharePerYearMI(totalCost * 10 / 100);
     }
     private void setCompanySharePerYearMI(double companyShare) {
-        setInputField(By.id("company_share_in_medical_insurance"), String.valueOf(companyShare));
+        setInputField(By.id("company_share_in_medical_insurance"), String.format("%.2f",companyShare));
     }
     private void setEmployeeSharePerYearMI(double employeeShare)  {
-        setInputField(By.id("employee_share_in_medical_insurance_per_year"), String.valueOf(employeeShare));
+        setInputField(By.id("employee_share_in_medical_insurance_per_year"), String.format("%.2f",employeeShare));
         setEmployeeSharePerMonthMI(employeeShare / 12);
     }
     private void setEmployeeSharePerMonthMI(double employeeSharePerMonth)  {
-        setInputField(By.id("employee_share_in_medical_insurance_per_month"), String.valueOf(employeeSharePerMonth));
+        setInputField(By.id("employee_share_in_medical_insurance_per_month"), String.format("%.2f",employeeSharePerMonth));
     }
     // ---------------------------
     // ✅ Payroll Handling Methods
